@@ -1,0 +1,34 @@
+{
+  "name": "SL-CLI2",
+  "version": "0.0.0",
+  "description": "SL command line trip planner",
+  "main": "dist/main.js",
+  "bin": {
+    "sl-cli": "./dist/main.js"
+  },
+  "scripts": {
+    "dev": "pnpm link --global .",
+    "start": "node dist/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Marcus Pettersson",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.22.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "SL-CLI2": "link:",
+    "commander": "^15.0.0",
+    "src": "link:src"
+  }
+}
