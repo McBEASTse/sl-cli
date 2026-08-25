@@ -1,11 +1,26 @@
 #!/usr/bin/env node
-import { program } from "commander";
-const hello = (message) => {
-    console.log(`hello`, program.args[0], program.args[1]);
-};
+import { Command } from "commander";
+import { SLAPI } from "./get_from_destination.js";
+const program = new Command();
+export const fromDestination = program.argument("<fromDestination>", "Destination from");
+export const toDestinatinon = program.argument("[toDestination]", "Destination from");
 program
-    .description("SL CLI - under uppbyggnad")
-    .argument("<string>")
-    .argument("<string>")
-    .action(hello);
+    .name("sl-cli")
+    .description("Example program with argument descriptions")
+    .action((fromDestination, toDestination) => {
+    if (toDestination === undefined || toDestination === null) {
+        async function run() {
+            const sl = new SLAPI();
+            const result = await sl.listDepartures(fromDestination);
+            for (const departure of result) {
+                console.log(departure.toString());
+            }
+        }
+        run();
+    }
+    else {
+        console.log("from:", fromDestination);
+        console.log("to:", toDestination);
+    }
+});
 program.parse();
