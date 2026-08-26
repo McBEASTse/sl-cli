@@ -47,3 +47,8 @@ export type StationDepartures = {
     };
   }[];
 };
+
+export type CacheStructure = {
+  timestamp: number;
+  data: AllSites;
+};

@@ -1,5 +1,21 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 export class SLAPI {
-    async fetchAllSites() {
+    cachePath = path.join(os.tmpdir(), "sl_cli_allSites_cache.json");
+    cacheTTL = 24 * 60 * 60 * 1000;
+    async fetchAllSites(forceRefresh = false) {
+        if (!forceRefresh) {
+            const cachedData = await this.readCache();
+            if (cachedData) {
+                return cachedData;
+            }
+        }
+        const apiData = await this.fetchSitesFromAPI();
+        await this.writeCache(apiData);
+        return apiData;
+    }
+    async fetchSitesFromAPI() {
         const url = `https://transport.integration.sl.se/v1/sites?expand=true`;
         try {
             const response = await fetch(url);
@@ -11,6 +27,30 @@ export class SLAPI {
         }
         catch (e) {
             throw new Error(`Error fetching locations: ${e.message}`);
+        }
+    }
+    async readCache() {
+        try {
+            const fileContent = await fs.readFile(this.cachePath, "utf-8");
+            const cache = JSON.parse(fileContent);
+            const isExpired = Date.now() - cache.timestamp > this.cacheTTL;
+            if (!isExpired) {
+                return cache.data;
+            }
+        }
+        catch { }
+        return null;
+    }
+    async writeCache(data) {
+        try {
+            const cacheToSave = {
+                timestamp: Date.now(),
+                data,
+            };
+            await fs.writeFile(this.cachePath, JSON.stringify(cacheToSave), "utf-8");
+        }
+        catch (e) {
+            throw new Error(`Error writing cache file: ${e.message}`);
         }
     }
     async fetchStation(stationName) {
@@ -69,7 +109,7 @@ export class SLAPI {
                 minute: "2-digit",
             });
             return [
-                `${departure.stop_area?.name} => ${departure.destination} -- Avgång: ${convertedTime}`,
+                `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime}\n`,
             ];
         });
         return departureList;

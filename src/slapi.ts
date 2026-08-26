@@ -1,11 +1,32 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 import type {
   AllSites,
   StationDepartures,
   StationInformation,
+  CacheStructure,
 } from "./api/slapi-types.js";
 
 export class SLAPI {
-  async fetchAllSites(): Promise<AllSites> {
+  private cachePath = path.join(os.tmpdir(), "sl_cli_allSites_cache.json");
+  private cacheTTL = 24 * 60 * 60 * 1000;
+
+  async fetchAllSites(forceRefresh: boolean = false): Promise<AllSites> {
+    if (!forceRefresh) {
+      const cachedData = await this.readCache();
+      if (cachedData) {
+        return cachedData;
+      }
+    }
+
+    const apiData = await this.fetchSitesFromAPI();
+    await this.writeCache(apiData);
+
+    return apiData;
+  }
+
+  private async fetchSitesFromAPI(): Promise<AllSites> {
     const url = `https://transport.integration.sl.se/v1/sites?expand=true`;
 
     try {
@@ -17,6 +38,31 @@ export class SLAPI {
       return location;
     } catch (e) {
       throw new Error(`Error fetching locations: ${(e as Error).message}`);
+    }
+  }
+
+  private async readCache(): Promise<AllSites | null> {
+    try {
+      const fileContent = await fs.readFile(this.cachePath, "utf-8");
+      const cache: CacheStructure = JSON.parse(fileContent);
+
+      const isExpired = Date.now() - cache.timestamp > this.cacheTTL;
+      if (!isExpired) {
+        return cache.data;
+      }
+    } catch {}
+    return null;
+  }
+
+  private async writeCache(data: AllSites): Promise<void> {
+    try {
+      const cacheToSave: CacheStructure = {
+        timestamp: Date.now(),
+        data,
+      };
+      await fs.writeFile(this.cachePath, JSON.stringify(cacheToSave), "utf-8");
+    } catch (e) {
+      throw new Error(`Error writing cache file: ${(e as Error).message}`);
     }
   }
 
@@ -93,7 +139,7 @@ export class SLAPI {
           },
         );
         return [
-          `${departure.stop_area?.name} => ${departure.destination} -- Avgång: ${convertedTime}`,
+          `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime}\n`,
         ];
       });
     return departureList;
