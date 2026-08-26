@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { SLAPI } from "./get_from_destination.js";
+import { SLAPI } from "./slapi.js";
 const program = new Command();
 
 export const fromDestination = program.argument(
@@ -20,7 +20,7 @@ program
     if (toDestination === undefined || toDestination === null) {
       async function run() {
         const sl = new SLAPI();
-        const result = await sl.listDepartures(fromDestination);
+        const result = await sl.listStationDepartures(fromDestination);
         for (const departure of result) {
           console.log(departure.toString());
         }

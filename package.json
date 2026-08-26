@@ -29,6 +29,7 @@
   "dependencies": {
     "SL-CLI2": "link:",
     "commander": "^15.0.0",
+    "node-cache": "^5.1.2",
     "src": "link:src"
   }
 }
