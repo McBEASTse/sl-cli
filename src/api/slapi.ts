@@ -3,10 +3,11 @@ import path from "node:path";
 import os from "node:os";
 import type {
   AllSites,
-  StationDepartures,
+  DeparturesFromSite,
   StationInformation,
   CacheStructure,
-} from "./api/slapi-types.js";
+  JourneyPlanner,
+} from "./slapi-types.js";
 
 export class SLAPI {
   private cachePath = path.join(os.tmpdir(), "sl_cli_allSites_cache.json");
@@ -81,38 +82,49 @@ export class SLAPI {
     }
   }
 
-  async fetchStationId(stationName: string): Promise<number | null> {
+  async fetchStationId(stationName: string) {
     const allSites = await this.fetchAllSites();
     const searchString: string = stationName.toLowerCase().trim();
     const exactMatch = allSites.find(
       (site) => site.name.toLowerCase() === searchString,
     );
-    if (exactMatch) return exactMatch.id;
+    if (exactMatch) return { id: exactMatch.id, gid: exactMatch.gid };
 
     const partialMatch = allSites.find((site) =>
       site.name.toLowerCase().includes(searchString),
     );
-    if (partialMatch) return partialMatch.id;
+    if (partialMatch) return { id: partialMatch.id, gid: partialMatch.gid };
 
     const aliasMatch = allSites.find((site) =>
       site.alias?.some((alias) => alias.toLowerCase().includes(searchString)),
     );
-    if (aliasMatch) return aliasMatch.id;
+    if (aliasMatch) return { id: aliasMatch.id, gid: aliasMatch.gid };
 
     return null;
   }
 
-  async fetchStationDepartures(
-    stationName: string,
-  ): Promise<StationDepartures> {
-    const stationId = await this.fetchStationId(stationName);
-    const url = `https://transport.integration.sl.se/v1/sites/${stationId}/departures`;
+  async fetchStationGid(stationName: string): Promise<string> {
+    const fetchStationNames = await this.fetchStation(stationName);
+    const bestStationMatch = fetchStationNames.locations?.[0];
 
-    if (!stationId) {
+    if (!bestStationMatch) {
+      throw new Error(`Error finding a best match for: ${stationName}`);
+    }
+    return bestStationMatch.id;
+  }
+
+  async fetchDeparturesFromSite(
+    stationName: string,
+  ): Promise<DeparturesFromSite> {
+    const stationIdGid = await this.fetchStationId(stationName);
+    if (!stationIdGid) {
       throw new Error(
         `Kunde inte hitta något stations-ID för: "${stationName}"`,
       );
     }
+
+    const stationId = stationIdGid.id;
+    const url = `https://transport.integration.sl.se/v1/sites/${stationId}/departures`;
 
     try {
       const response = await fetch(url);
@@ -120,28 +132,78 @@ export class SLAPI {
         throw new Error(`${response.status} ${response.statusText}`);
       }
       const departures = await response.json();
-      return departures as StationDepartures;
+      return departures as DeparturesFromSite;
     } catch (e) {
       throw new Error(`Error fetching the station ID: ${(e as Error).message}`);
     }
   }
 
-  async listStationDepartures(departures: string) {
-    const nextDepartures = await this.fetchStationDepartures(departures);
+  async listDeparturesFromSite(departures: string) {
+    const nextDepartures = await this.fetchDeparturesFromSite(departures);
     const departureList = nextDepartures.departures
       .slice(0, 5)
       .map((departure) => {
-        const convertedTime = new Date(departure.scheduled).toLocaleTimeString(
-          "sv-SE",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-          },
-        );
+        const convertedTime = this.convertTime(departure.scheduled);
         return [
-          `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime}\n`,
+          `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime} (${departure.display})\n`,
         ];
       });
     return departureList;
+  }
+
+  async journeyPlanner(
+    fromDestination: string,
+    toDestination: string,
+    numberOfTrips: number = 3,
+  ): Promise<JourneyPlanner> {
+    const fromDestinationIdGid = await this.fetchStationGid(fromDestination);
+    const toDestinationIdGid = await this.fetchStationGid(toDestination);
+    if (!fromDestinationIdGid || !toDestinationIdGid) {
+      throw new Error(`Det blev något fel.`);
+    }
+    const url = `https://journeyplanner.integration.sl.se/v2/trips?type_origin=any&type_destination=any&name_origin=${fromDestinationIdGid}&name_destination=${toDestinationIdGid}&calc_number_of_trips=${numberOfTrips}`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      const journey = (await response.json()) as JourneyPlanner;
+      return journey as JourneyPlanner;
+    } catch (e) {
+      throw new Error(`Error fetching locations: ${(e as Error).message}`);
+    }
+  }
+
+  async listJourneys(fromDestination: string, toDestination: string) {
+    const journeysData = await this.journeyPlanner(
+      fromDestination,
+      toDestination,
+    );
+    return journeysData.journeys.map((journey) => {
+      const firstLeg = journey.legs[0];
+      const lastLeg = journey.legs[journey.legs.length - 1];
+      if (!firstLeg || !lastLeg) {
+        throw new Error(`Ingen information om delsträckor.`);
+      }
+
+      const startStation = firstLeg.origin.name;
+      const endStation = lastLeg.destination.name;
+      const startStationTime = this.convertTime(
+        firstLeg.origin.departureTimePlanned,
+      );
+      const endStationTime = this.convertTime(
+        lastLeg.destination.arrivalTimePlanned,
+      );
+
+      return `Från: ${startStation} (${startStationTime}) => ${endStation} (${endStationTime}), byten ${journey.interchanges}`;
+    });
+  }
+
+  private convertTime(rawTimeFormat: string) {
+    return new Date(rawTimeFormat).toLocaleTimeString("sv-SE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 }

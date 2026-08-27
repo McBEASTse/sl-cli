@@ -203,10 +203,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  SL-CLI: 'link:'
+
 importers:
 
   .:
     dependencies:
+      SL-CLI:
+        specifier: 'link:'
+        version: 'link:'
       SL-CLI2:
         specifier: 'link:'
         version: 'link:'

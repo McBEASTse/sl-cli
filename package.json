@@ -1,7 +1,7 @@
 {
-  "name": "SL-CLI2",
+  "name": "SL-CLI",
   "version": "0.0.0",
-  "description": "SL command line trip planner",
+  "description": "SL CLI Travel Planner",
   "main": "dist/main.js",
   "bin": {
     "sl-cli": "./dist/main.js"
@@ -27,6 +27,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "SL-CLI": "link:",
     "SL-CLI2": "link:",
     "commander": "^15.0.0",
     "node-cache": "^5.1.2",

@@ -1,18 +1,18 @@
 export type AllSites = {
-  id: number;
-  gid: number;
+  id: string;
+  gid: string;
   name: string;
   alias: string[];
   note: string;
   lat: number;
   lon: number;
   valid: {
-    from: Date;
+    from: string;
   };
 }[];
 
 export type SitesInformation = {
-  id: number;
+  id: string;
   gid: number;
   name: string;
   abbreviation: string;
@@ -35,11 +35,12 @@ export type StationInformation = {
   }[];
 };
 
-export type StationDepartures = {
+export type DeparturesFromSite = {
   departures: {
-    direction: string;
     destination: string;
-    scheduled: Date;
+    direction: string;
+    display: string;
+    scheduled: string;
     stop_area: {
       id: number;
       name: string;
@@ -51,4 +52,31 @@ export type StationDepartures = {
 export type CacheStructure = {
   timestamp: number;
   data: AllSites;
+};
+
+export type JourneyPlanner = {
+  journeys: {
+    tripDuration: number;
+    isAdditional: boolean;
+    interchanges: number;
+    legs: {
+      origin: {
+        departureTimePlanned: string;
+        name: string;
+      };
+      destination: {
+        arrivalTimePlanned: string;
+        name: string;
+      };
+      transportation: {
+        number: string;
+        product: {
+          name: string;
+        };
+        destination: {
+          name: string;
+        };
+      };
+    }[];
+  }[];
 };

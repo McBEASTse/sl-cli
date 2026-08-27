@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { SLAPI } from "./slapi.js";
+import { SLAPI } from "./api/slapi.js";
 const program = new Command();
 
 export const fromDestination = program.argument(
@@ -16,19 +16,18 @@ export const toDestinatinon = program.argument(
 program
   .name("sl-cli")
   .description("Example program with argument descriptions")
-  .action((fromDestination, toDestination) => {
-    if (toDestination === undefined || toDestination === null) {
-      async function run() {
-        const sl = new SLAPI();
-        const result = await sl.listStationDepartures(fromDestination);
-        for (const departure of result) {
-          console.log(departure.toString());
-        }
+  .action(async (fromDestination, toDestination) => {
+    const sl = new SLAPI();
+    if (!toDestination) {
+      const result = await sl.listDeparturesFromSite(fromDestination);
+      for (const departure of result) {
+        console.log(departure.toString());
       }
-      run();
     } else {
-      console.log("from:", fromDestination);
-      console.log("to:", toDestination);
+      const result = await sl.listJourneys(fromDestination, toDestination);
+      for (const trip of result) {
+        console.log(trip.toString());
+      }
     }
   });
 
