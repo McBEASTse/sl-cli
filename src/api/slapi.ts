@@ -88,17 +88,17 @@ export class SLAPI {
     const exactMatch = allSites.find(
       (site) => site.name.toLowerCase() === searchString,
     );
-    if (exactMatch) return { id: exactMatch.id, gid: exactMatch.gid };
+    if (exactMatch) return exactMatch.id;
 
     const partialMatch = allSites.find((site) =>
       site.name.toLowerCase().includes(searchString),
     );
-    if (partialMatch) return { id: partialMatch.id, gid: partialMatch.gid };
+    if (partialMatch) return partialMatch.id;
 
     const aliasMatch = allSites.find((site) =>
       site.alias?.some((alias) => alias.toLowerCase().includes(searchString)),
     );
-    if (aliasMatch) return { id: aliasMatch.id, gid: aliasMatch.gid };
+    if (aliasMatch) return aliasMatch.id;
 
     return null;
   }
@@ -116,14 +116,13 @@ export class SLAPI {
   async fetchDeparturesFromSite(
     stationName: string,
   ): Promise<DeparturesFromSite> {
-    const stationIdGid = await this.fetchStationId(stationName);
-    if (!stationIdGid) {
+    const stationId = await this.fetchStationId(stationName);
+    if (!stationId) {
       throw new Error(
         `Kunde inte hitta något stations-ID för: "${stationName}"`,
       );
     }
 
-    const stationId = stationIdGid.id;
     const url = `https://transport.integration.sl.se/v1/sites/${stationId}/departures`;
 
     try {
@@ -183,12 +182,26 @@ export class SLAPI {
     return journeysData.journeys.map((journey) => {
       const firstLeg = journey.legs[0];
       const lastLeg = journey.legs[journey.legs.length - 1];
-      if (!firstLeg || !lastLeg) {
+      const journeyOriginNames: string[] = journey.legs.map(
+        (journeyStop) => journeyStop.origin.name,
+      );
+      const journeyDestinationNames: string[] = journey.legs.map(
+        (journeyStop) => journeyStop.destination.name,
+      );
+      const journeyOrigin = journeyOriginNames[0];
+      const journeyDestination =
+        journeyDestinationNames[journeyDestinationNames.length - 1];
+      if (
+        !journeyOriginNames ||
+        !journeyDestinationNames ||
+        !firstLeg ||
+        !lastLeg
+      ) {
         throw new Error(`Ingen information om delsträckor.`);
       }
 
-      const startStation = firstLeg.origin.name;
-      const endStation = lastLeg.destination.name;
+      const listStops = journeyDestinationNames.join(" => ");
+
       const startStationTime = this.convertTime(
         firstLeg.origin.departureTimePlanned,
       );
@@ -196,7 +209,9 @@ export class SLAPI {
         lastLeg.destination.arrivalTimePlanned,
       );
 
-      return `Från: ${startStation} (${startStationTime}) => ${endStation} (${endStationTime}), byten ${journey.interchanges}`;
+      return `${journeyOrigin} (${startStationTime}) => ${journeyDestination} (${endStationTime})
+Antal byten: ${journey.interchanges}
+${journeyOrigin} => ${listStops}\n`;
     });
   }
 
