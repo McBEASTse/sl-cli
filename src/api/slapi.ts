@@ -1,5 +1,6 @@
 import type { JourneyPlanner } from "./slapi-types.js";
-import { fetchStationGid } from "../fetch_station_ids.js";
+import kleur from "kleur";
+import { fetchStationGid } from "../fetch_station.js";
 import { convertTime } from "../convert_time.js";
 import { fetchDeparturesFromSite } from "../fetch_sites.js";
 
@@ -24,10 +25,11 @@ export class SLAPI {
   ): Promise<JourneyPlanner> {
     const fromDestinationIdGid = await fetchStationGid(fromDestination);
     const toDestinationIdGid = await fetchStationGid(toDestination);
+    const calcOneDirectionTrue = `&calc_one_direction=true`;
     if (!fromDestinationIdGid || !toDestinationIdGid) {
       throw new Error(`Det blev något fel.`);
     }
-    const url = `https://journeyplanner.integration.sl.se/v2/trips?type_origin=any&type_destination=any&name_origin=${fromDestinationIdGid}&name_destination=${toDestinationIdGid}&calc_number_of_trips=${numberOfTrips}`;
+    const url = `https://journeyplanner.integration.sl.se/v2/trips?type_origin=any&type_destination=any&name_origin=${fromDestinationIdGid}&name_destination=${toDestinationIdGid}&calc_number_of_trips=${numberOfTrips}${calcOneDirectionTrue}`;
 
     try {
       const response = await fetch(url);
@@ -52,22 +54,18 @@ export class SLAPI {
       const journeyOriginNames: string[] = journey.legs.map(
         (journeyStop) => journeyStop.origin.name,
       );
-      const journeyDestinationNames: string[] = journey.legs.map(
+      const journeyStopNames: string[] = journey.legs.map(
         (journeyStop) => journeyStop.destination.name,
       );
       const journeyOrigin = journeyOriginNames[0];
-      const journeyDestination =
-        journeyDestinationNames[journeyDestinationNames.length - 1];
-      if (
-        !journeyOriginNames ||
-        !journeyDestinationNames ||
-        !firstLeg ||
-        !lastLeg
-      ) {
+      const journeyDestination = journeyStopNames[journeyStopNames.length - 1];
+      if (!journeyOriginNames || !journeyStopNames || !firstLeg || !lastLeg) {
         throw new Error(`Ingen information om delsträckor.`);
       }
-
-      const listStops = journeyDestinationNames.join(" => ");
+      const formattedLegs = journey.legs
+        .map(formatLeg)
+        .filter((leg): leg is string => leg !== null);
+      const journeyStops = formattedLegs.join(` => `);
 
       const startStationTime = convertTime(
         firstLeg.origin.departureTimePlanned,
@@ -78,7 +76,37 @@ export class SLAPI {
 
       return `${journeyOrigin} (${startStationTime}) => ${journeyDestination} (${endStationTime})
 Antal byten: ${journey.interchanges}
-${journeyOrigin} => ${listStops}\n`;
+${journeyStops}\n`;
     });
   }
+}
+
+function formatLeg(leg: any): string | null {
+  const productName = leg.transportation.product.name;
+  if (productName === "footpath") {
+    return null;
+  }
+
+  const lineNumber = leg.transportation.disassembledName;
+  const origin = leg.origin.name;
+  const destination = leg.destination.name;
+
+  let lineLabel = lineNumber;
+  if (lineNumber === "10" || lineNumber === "11") {
+    lineLabel = kleur.bold().black().bgBlue(` T${lineNumber} `);
+  } else if (lineNumber === "13" || lineNumber === "14") {
+    lineLabel = kleur.bold().black().bgRed(` T${lineNumber} `);
+  } else if (lineNumber === "29") {
+    lineLabel = kleur.bold().black().bgMagenta(` R${lineNumber} `);
+  } else if (
+    lineNumber === "17" ||
+    lineNumber === "18" ||
+    lineNumber === "19"
+  ) {
+    lineLabel = kleur.bold().black().bgGreen(` ${lineNumber} `);
+  } else {
+    lineLabel = kleur.bold().white().bgBlack(` B${lineNumber} `);
+  }
+
+  return `${origin} ${lineLabel} => ${destination}`;
 }

@@ -30,6 +30,7 @@
     "SL-CLI": "link:",
     "SL-CLI2": "link:",
     "commander": "^15.0.0",
+    "kleur": "^4.1.5",
     "node-cache": "^5.1.2",
     "src": "link:src"
   }

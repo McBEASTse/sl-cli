@@ -1,6 +1,6 @@
 import { AllSites, DeparturesFromSite } from "./api/slapi-types.js";
 import { readCache, writeCache } from "./cache.js";
-import { fetchStationId } from "./fetch_station_ids.js";
+import { fetchStationId } from "./fetch_station.js";
 import { convertTime } from "./convert_time.js";
 
 export async function fetchAllSites(
