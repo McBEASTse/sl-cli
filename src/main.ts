@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { SLAPI } from "./api/slapi.js";
+import { listDeparturesFromSite } from "./fetch_sites.js";
 const program = new Command();
 
 export const fromDestination = program.argument(
@@ -19,7 +20,7 @@ program
   .action(async (fromDestination, toDestination) => {
     const sl = new SLAPI();
     if (!toDestination) {
-      const result = await sl.listDeparturesFromSite(fromDestination);
+      const result = await listDeparturesFromSite(fromDestination);
       for (const departure of result) {
         console.log(departure.toString());
       }

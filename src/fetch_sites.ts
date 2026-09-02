@@ -1,4 +1,5 @@
 import { AllSites, DeparturesFromSite } from "./api/slapi-types.js";
+import { createLineLabel } from "./formating.js";
 import { readCache, writeCache } from "./cache.js";
 import { fetchStationId } from "./fetch_station.js";
 import { convertTime } from "./convert_time.js";
@@ -56,14 +57,23 @@ export async function fetchDeparturesFromSite(
   }
 }
 
-export async function listDeparturesFromSite(departures: string) {
+export async function listDeparturesFromSite(
+  departures: string,
+  listAmount: number = 5,
+) {
   const nextDepartures = await fetchDeparturesFromSite(departures);
   const departureList = nextDepartures.departures
-    .slice(0, 5)
+    .slice(0, listAmount)
     .map((departure) => {
       const convertedTime = convertTime(departure.scheduled);
+      const lineLabel = createLineLabel(
+        departure.line.transport_mode,
+        departure.line.id,
+      );
       return [
-        `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime} (${departure.display})\n`,
+        `${departure.stop_area?.name} => ${departure.destination}
+${lineLabel}
+Avgång: ${convertedTime} (${departure.display})\n`,
       ];
     });
   return departureList;

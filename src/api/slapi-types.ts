@@ -46,6 +46,12 @@ export type DeparturesFromSite = {
       name: string;
       type: string;
     };
+    line: {
+      id: number;
+      designation: string;
+      transport_mode: string;
+      group_of_lines: string;
+    };
   }[];
 };
 
@@ -69,6 +75,7 @@ export type JourneyPlanner = {
         name: string;
       };
       transportation: {
+        disassembledName: string;
         number: string;
         product: {
           name: string;

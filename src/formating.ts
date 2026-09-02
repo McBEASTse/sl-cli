@@ -12,7 +12,7 @@ export function formatStopsList(leg: any): string | null {
 }
 
 export function formatLineLabelsList(leg: any): string | null {
-  const productName = leg.transportation.product.name.toLowerCase();
+  const productName = leg.transportation.product.name;
   const lineNumber = leg.transportation.disassembledName;
 
   if (productName !== "footpath") {
@@ -22,13 +22,18 @@ export function formatLineLabelsList(leg: any): string | null {
   return null;
 }
 
-export function createLineLabel(productName: string, lineNumber: string) {
+export function createLineLabel(
+  productName: string,
+  lineNumber: string | number,
+) {
   let lineLabel = lineNumber;
-  if (productName.includes("båt")) {
+  productName = productName.toLowerCase();
+  lineNumber = lineNumber.toString();
+  if (productName.includes("båt") || productName.includes("ship")) {
     return (lineLabel =
       chalk.hex("#FFFFFF").bold.bgHex("#000000")(` Båt `) +
       chalk.hex("#FFFFFF").bold.bgHex("#498228")(` ${lineNumber} `));
-  } else if (productName.includes("spårvagn")) {
+  } else if (productName.includes("spårvagn") || productName.includes("tram")) {
     switch (lineNumber) {
       case "7":
         return (lineLabel =
@@ -59,11 +64,14 @@ export function createLineLabel(productName: string, lineNumber: string) {
           chalk.hex("#FFFFFF").bold.bgHex("#000000")(` Tv `) +
           chalk.hex("#FFFFFF").bold.bgHex("#007DB8")(` ${lineNumber} `));
     }
-  } else if (productName.includes("tåg")) {
+  } else if (productName.includes("tåg") || productName.includes("train")) {
     return (lineLabel =
       chalk.hex("#FFFFFF").bold.bgHex("#000000")(` P `) +
       chalk.hex("#FFFFFF").bold.bgHex("#CC417F")(` ${lineNumber} `));
-  } else if (productName.includes("tunnelbana")) {
+  } else if (
+    productName.includes("tunnelbana") ||
+    productName.includes("metro")
+  ) {
     switch (lineNumber) {
       case "10":
       case "11":
@@ -82,7 +90,7 @@ export function createLineLabel(productName: string, lineNumber: string) {
           chalk.hex("#FFFFFF").bold.bgHex("#000000")(` T `) +
           chalk.hex("#FFFFFF").bold.bgHex("#148541")(` ${lineNumber} `));
     }
-  } else if (productName.includes("buss")) {
+  } else if (productName.includes("bus")) {
     return (lineLabel =
       chalk.hex("#FFFFFF").bold.bgHex("#000000")(` B `) +
       chalk.hex("#FFFFFF").bold.bgHex("#000000")(` ${lineNumber} `));
