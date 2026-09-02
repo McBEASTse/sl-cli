@@ -2,22 +2,8 @@ import type { JourneyPlanner } from "./slapi-types.js";
 import { formatLineLabelsList, formatStopsList } from "../formating.js";
 import { fetchStationGid } from "../fetch_station.js";
 import { convertTime } from "../convert_time.js";
-import { fetchDeparturesFromSite } from "../fetch_sites.js";
 
 export class SLAPI {
-  async listDeparturesFromSite(departures: string) {
-    const nextDepartures = await fetchDeparturesFromSite(departures);
-    const departureList = nextDepartures.departures
-      .slice(0, 5)
-      .map((departure) => {
-        const convertedTime = convertTime(departure.scheduled);
-        return [
-          `${departure.stop_area?.name} => ${departure.destination}\nAvgång: ${convertedTime} (${departure.display})\n`,
-        ];
-      });
-    return departureList;
-  }
-
   async journeyPlanner(
     fromDestination: string,
     toDestination: string,

@@ -28,11 +28,15 @@ pnpm link --global .
 
 ### Usage
 
-`sl odenplan` shows all destinations from Stadshagen.
+#### See departures
+
+Example, `sl odenplan` shows the next five destinations from Stadshagen. An option to change how many departures and when will come later.
 
 <img width="851" height="464" alt="sl-cli-departures" src="https://github.com/user-attachments/assets/ce943abb-3767-487b-8326-3b9cdd38cd6d" />
 
-`sl odenplan "täby kyrkby"` shows the three next journeys from Odenplan to Täby Kyrkby Trafikplats.
+#### Get journey from one place to another
+
+Example, `sl odenplan "täby kyrkby"` shows the three next journeys (or more if they have the same departure time, something with the SL API...) from Odenplan to Täby Kyrkby Trafikplats.
 
 <img width="853" height="601" alt="sl-cli-journey-planner" src="https://github.com/user-attachments/assets/077af9a1-d926-4443-94b9-f2235b4cb588" />
 
