@@ -4,7 +4,7 @@
   "description": "SL CLI Travel Planner",
   "main": "dist/main.js",
   "bin": {
-    "sl-cli": "./dist/main.js"
+    "sl": "./dist/main.js"
   },
   "scripts": {
     "dev": "pnpm link --global .",
