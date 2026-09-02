@@ -29,7 +29,12 @@ pnpm link --global .
 ### Usage
 
 `sl odenplan` shows all destinations from Stadshagen.
+
+<img width="851" height="464" alt="sl-cli-departures" src="https://github.com/user-attachments/assets/ce943abb-3767-487b-8326-3b9cdd38cd6d" />
+
 `sl odenplan "täby kyrkby"` shows the three next journeys from Odenplan to Täby Kyrkby Trafikplats.
+
+<img width="853" height="601" alt="sl-cli-journey-planner" src="https://github.com/user-attachments/assets/077af9a1-d926-4443-94b9-f2235b4cb588" />
 
 ## To-do
 
