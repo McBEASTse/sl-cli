@@ -12,13 +12,9 @@ Clone the repo:
 git clone https://github.com/McBEASTse/sl-cli.git
 ```
 
-Link the the source directory to add a global `sl` command to the terminal emulator:
+Build the distribution, for example using `tsc` in the project root.
 
-npm:
-
-```bash
-npm link .
-```
+Link the the source directory to add a global `sl` command to the terminal emulator. I recommend using pnpm for this:
 
 pnpm:
 
